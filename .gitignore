@@ -1,0 +1,15 @@
+# Ignore build artifacts
+/build/
+*.o
+*.exe
+*.out
+*.obj
+*.dll
+*.so
+*.dylib
+
+# Ignore editor files
+*.swp
+*~
+.vscode/
+.idea/
