@@ -5,6 +5,7 @@
 - Learn Unix process model and C system programming
 - Build a maintainable, minimal shell in C
 - Practice design, testing, and clean architecture
+- Explore implementing functional programming within a C environment
 
 ## Milestones
 
