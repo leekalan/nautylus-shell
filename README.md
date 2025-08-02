@@ -30,7 +30,7 @@ The shell supports most Unix functionality, including file I/O, job control, and
 ├── docs/                 # Documentation
 │
 ├── scripts/              # Utility scripts
-|
+│
 ├── Makefile              # Build system
 ├── README.md             # This file
 └── ARCHITECTURE.md       # Internal design documentation
