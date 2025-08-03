@@ -58,8 +58,8 @@ tests: $(TEST_EXEC)
 
 .PHONY: run-tests
 run-tests: $(TEST_EXEC)
-	@echo "Running all tests..."
+	@echo "\033[1mRunning all tests...\033[0m"
 	@for test in $(TEST_EXEC); do \
-		echo "Running $$test"; \
+ 		echo ""; \
 		$$test || exit 1; \
 	done

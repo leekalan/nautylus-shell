@@ -1,6 +1,14 @@
 #include <stdio.h>
 
-int main(void) {
-  printf("echo...\n");
-  return 0;
+#include "./util/util.h"
+
+int echo() {
+    printf("echo...\n");
+    return 0;
+}
+
+int main(int argc, char **argv) {
+    start_test_env(argc, argv);
+    run_test(echo(), "echo");
+    return end_test_env();
 }
