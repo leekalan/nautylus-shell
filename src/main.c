@@ -13,7 +13,7 @@ int main(void) {
         if (update_input_buffer(&buf) == INPUT_BUFFER_READY) {
             printf("Input received: %s\n", buf.data);
             reset_input_buffer(&buf);
-            break;
+            write(STDOUT_FILENO, "> ", 2);
         }
     }
 
