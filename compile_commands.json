@@ -30,5 +30,21 @@
    "build/main.o"
   ],
   "file": "src/main.c"
+ },
+ {
+  "directory": "/Users/kalanlee/Coding/nautylus-shell",
+  "arguments": [
+   "gcc",
+   "-Wall",
+   "-Wextra",
+   "-O2",
+   "-Iinclude",
+   "-MMD",
+   "-c",
+   "src/parse.c",
+   "-o",
+   "build/parse.o"
+  ],
+  "file": "src/parse.c"
  }
 ]
