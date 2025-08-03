@@ -9,7 +9,7 @@
 
 ## Milestones
 
-- [ ] #1: Setup the repository and project
+- [X] #1: Setup the repository and project
 - [ ] #2: Setup the basic shell loop
 
 ..
@@ -21,3 +21,9 @@
 - Add file I/O
 - Add pipes and related commands
 - Research and add job control
+
+# Iteration #2: Setup the repository and project
+
+- [X] Setup the baseline requirements to process user input
+- [ ] Add parsing the input into tokens
+- [ ] Add executing commands from tokens

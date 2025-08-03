@@ -33,7 +33,7 @@ Title: `Test and implement ls`
 ---
 
 ```
-Issue: the shell does not currently support the `ls` command
+Issue: The shell does not currently support the `ls` command
 
 Plan:
 - Create tests for the `ls` command
