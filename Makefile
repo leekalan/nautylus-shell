@@ -129,45 +129,48 @@ $(CLANG_TEST_BUILD)/%: tests/%.c $(CLANG_LIB_OBJ) $(CLANG_TEST_UTIL_OBJ)
 
 .PHONY: clean
 clean:
-	rm -rf build/
+	@rm -rf build/
 
 # Build and run executable
 .PHONY: run
 run: $(EXEC)
-	./scripts/run.sh
+	@./$(EXEC)
 
 .PHONY: tests-gcc
 test-gcc: $(TEST_EXEC)
-	@echo "\033[34;1m[GCC] Running all tests...\033[0m"
+	@echo "\033[34;1m---- [GCC] Running all tests -----\033[0m"
 	@fail=0; \
 	for test in $(TEST_EXEC); do \
-		$$test || fail=1; \
+		$$test || fail=+1; \
  		echo ""; \
 	done; \
 	exit $$fail
+	@echo "\033[34;1mFinished all tests\033[0m"
 
 .PHONY: run-clang
 run-clang: $(CLANG_EXEC)
-	./scripts/run-clang.sh
+	@./$(CLANG_EXEC)
 
 .PHONY: tests
 test: $(CLANG_TEST_EXEC)
-	@echo "\033[34;1m[CLANG] Running all tests...\033[0m"
+	@echo "\033[34;1m---- [CLANG] Running all tests ---\033[0m"
 	@fail=0; \
 	for test in $(CLANG_TEST_EXEC); do \
 		$$test || fail=1; \
   		echo ""; \
 	done; \
 	exit $$fail
+	@echo "\033[34;1mFinished all tests\033[0m"
 
 .PHONY: check
 check: $(EXEC) $(TEST_EXEC) $(CLANG_EXEC) $(CLANG_TEST_EXEC)
 	@make test
+	@echo ""
 	@make test-gcc
 
 .PHONY: format
 format:
-	clang-format -i $(SRC) $(TEST_SRC) $(TEST_UTIL)
+	@clang-format -i $(SRC) $(TEST_SRC) $(TEST_UTIL)
 
 .PHONY: all
 all: $(EXEC) $(TEST_EXEC) $(CLANG_EXEC) $(CLANG_TEST_EXEC)
