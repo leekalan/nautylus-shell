@@ -4,9 +4,13 @@ CLANG_BUILD := build/clang
 TEST_BUILD := build/tests
 CLANG_TEST_BUILD := build/clang/tests
 
+# Test include flags
+TEST_INCLUDE := -Itests/util
+
 # GCC flags
 CC := gcc
 CFLAGS := -Wall -Wextra -O2 -Iinclude
+CFLAGS_TEST := $(CFLAGS) $(TEST_INCLUDE)
 
 # Clang flags
 CLANG_CC := clang
@@ -21,6 +25,7 @@ endif
 CLANG_FLAGS := -Wall -Wextra -O1 -g -Iinclude \
   -fsanitize=undefined,address -fno-omit-frame-pointer -fno-common \
   -fno-sanitize-recover=all -Wpedantic -Wshadow $(CLANG_PLATFORM_FLAGS)
+CLANG_FLAGS_TEST := $(CLANG_FLAGS) $(TEST_INCLUDE)
 
 # Default target
 default: $(EXEC)
@@ -98,7 +103,7 @@ $(TEST_UTIL_OBJ): $(TEST_UTIL)
 $(TEST_BUILD)/%: tests/%.c $(LIB_OBJ) $(TEST_UTIL_OBJ)
 	@echo "[TEST] Building $<..."
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< $(LIB_OBJ) $(TEST_UTIL_OBJ) -o $@
+	$(CC) $(CFLAGS_TEST) $< $(LIB_OBJ) $(TEST_UTIL_OBJ) -o $@
 
 ### CLANG BUILD ###
 
@@ -123,7 +128,7 @@ $(CLANG_TEST_UTIL_OBJ): $(TEST_UTIL)
 $(CLANG_TEST_BUILD)/%: tests/%.c $(CLANG_LIB_OBJ) $(CLANG_TEST_UTIL_OBJ)
 	@echo "[CLANG/TEST] Building $<..."
 	@mkdir -p $(dir $@)
-	$(CLANG_CC) $(CLANG_FLAGS) $< $(CLANG_LIB_OBJ) $(CLANG_TEST_UTIL_OBJ) -o $@
+	$(CLANG_CC) $(CLANG_FLAGS_TEST) $< $(CLANG_LIB_OBJ) $(CLANG_TEST_UTIL_OBJ) -o $@
 
 ### COMMANDS ###
 
