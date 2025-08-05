@@ -107,56 +107,6 @@
    "-Wpedantic",
    "-Wshadow",
    "-Itests/util",
-   "tests/parse/test_parse_1.c",
-   "build/clang/input.o",
-   "build/clang/parse.o",
-   "build/clang/tests/util/test_util.o",
-   "-o",
-   "build/clang/tests/parse/test_parse_1"
-  ],
-  "file": "tests/parse/test_parse_1.c"
- },
- {
-  "directory": "/Users/kalanlee/Coding/nautylus-shell",
-  "arguments": [
-   "clang",
-   "-Wall",
-   "-Wextra",
-   "-O1",
-   "-g",
-   "-Iinclude",
-   "-fsanitize=undefined,address",
-   "-fno-omit-frame-pointer",
-   "-fno-common",
-   "-fno-sanitize-recover=all",
-   "-Wpedantic",
-   "-Wshadow",
-   "-Itests/util",
-   "tests/parse/test_parse_0.c",
-   "build/clang/input.o",
-   "build/clang/parse.o",
-   "build/clang/tests/util/test_util.o",
-   "-o",
-   "build/clang/tests/parse/test_parse_0"
-  ],
-  "file": "tests/parse/test_parse_0.c"
- },
- {
-  "directory": "/Users/kalanlee/Coding/nautylus-shell",
-  "arguments": [
-   "clang",
-   "-Wall",
-   "-Wextra",
-   "-O1",
-   "-g",
-   "-Iinclude",
-   "-fsanitize=undefined,address",
-   "-fno-omit-frame-pointer",
-   "-fno-common",
-   "-fno-sanitize-recover=all",
-   "-Wpedantic",
-   "-Wshadow",
-   "-Itests/util",
    "tests/test_echo.c",
    "build/clang/input.o",
    "build/clang/parse.o",
@@ -165,5 +115,30 @@
    "build/clang/tests/test_echo"
   ],
   "file": "tests/test_echo.c"
+ },
+ {
+  "directory": "/Users/kalanlee/Coding/nautylus-shell",
+  "arguments": [
+   "clang",
+   "-Wall",
+   "-Wextra",
+   "-O1",
+   "-g",
+   "-Iinclude",
+   "-fsanitize=undefined,address",
+   "-fno-omit-frame-pointer",
+   "-fno-common",
+   "-fno-sanitize-recover=all",
+   "-Wpedantic",
+   "-Wshadow",
+   "-Itests/util",
+   "tests/parse/test_parse.c",
+   "build/clang/input.o",
+   "build/clang/parse.o",
+   "build/clang/tests/util/test_util.o",
+   "-o",
+   "build/clang/tests/parse/test_parse"
+  ],
+  "file": "tests/parse/test_parse.c"
  }
 ]
