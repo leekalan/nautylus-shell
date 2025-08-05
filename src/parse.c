@@ -58,6 +58,13 @@ char *parse_token(char **input) {
     char *token = malloc(strlen(cleared) + 1);
     size_t index = 0;
     while (*cleared != '\0' && !isspace(*cleared) && !is_operator(*cleared)) {
+        if (*cleared == '\\') {
+            cleared += 1;
+            if (*cleared == '\0') {
+                break;
+            }
+        }
+
         token[index] = *cleared;
         cleared += 1;
         index += 1;
