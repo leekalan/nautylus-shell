@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -79,10 +80,19 @@ int update_input_buffer(InputBuffer *buf) {
 
         return 0;
     } else if (c == '\n' || c == '\r') {
-        // Enter
+        // New line
         write(STDOUT_FILENO, "\n", 1);
-        buf->data[buf->len] = '\0';
-        return INPUT_BUFFER_READY;
+
+        if (buf->len >= 2 && buf->data[buf->len - 1] == '\\') {
+            // Escaped new line
+            write(STDOUT_FILENO, "• ", strlen("• "));
+            fflush(stdout);
+            buf->len -= 1;
+            return 0;
+        } else {
+            buf->data[buf->len] = '\0';
+            return INPUT_BUFFER_READY;
+        }
     }
 
     if (buf->len == INPUT_BUFFER_SIZE - 1) {
