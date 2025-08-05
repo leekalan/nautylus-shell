@@ -1,3 +1,5 @@
+#include <ctype.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,11 +31,72 @@ const char *match_operator(char *input) {
     return NULL;
 }
 
+char *clear_whitespace(const char *input) {
+    if (*input == '\0') return NULL;
+
+    while (isspace((unsigned char)*input)) {
+        input += 1;
+    }
+
+    return (char *)input;
+}
+
+char *parse_token(char **input) {
+    char *cleared = clear_whitespace(*input);
+
+    if (!cleared || *cleared == '\0') {
+        *input = NULL;
+        return NULL;
+    }
+    
+    if (is_operator(*cleared)) {
+        const char *const_op = match_operator(cleared);
+        char *op = malloc(strlen(const_op) + 1);
+        strcpy(op, const_op);
+        *input = cleared + strlen(op);
+        return (char *)op;
+    }
+
+    char *token = malloc(strlen(cleared) + 1);
+    size_t index = 0;
+    while (*cleared != '\0' && !isspace(*cleared) && !is_operator(*cleared)) {
+        token[index] = *cleared;
+        cleared += 1;
+        index += 1;
+    }
+    token[index] = '\0';
+    token = realloc(token, index + 1);
+
+    *input = cleared;
+    return token;
+}
+
 TokenList token_list_parse(char *input) {
     TokenList list;
     list.count = 0;
 
-    // TODO:
-    list.tokens = &input;
+    char *token = parse_token(&input);
+    if (token == NULL) {
+        list.tokens = NULL;
+        return list;
+    }
+
+    size_t data_cap = 1;
+    list.count = 1;
+    list.tokens = malloc(sizeof(char *));
+    list.tokens[0] = token;
+    token = parse_token(&input);
+    while (token != NULL) {
+        if (list.count == data_cap) {
+            data_cap *= 2;
+            list.tokens = realloc(list.tokens, data_cap * sizeof(char *));
+        }
+        list.tokens[list.count] = token;
+        list.count += 1;
+        token = parse_token(&input);
+    }
+
+    list.tokens = realloc(list.tokens, list.count * sizeof(char *));
+
     return list;
 }

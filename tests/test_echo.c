@@ -2,7 +2,9 @@
 
 #include "./util/util.h"
 
-int echo() {
+int echo(void);
+
+int echo(void) {
     printf("echo...\n");
     return 0;
 }

@@ -24,7 +24,6 @@ int main(void) {
             for (size_t i = 0; i < tokens.count; i++) {
                 printf("Token[%ld]: %s\n", i, tokens.tokens[i]);
             }
-            write(STDOUT_FILENO, "\n", 1);
 
             token_list_free(tokens);
 

@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -25,6 +26,9 @@ int stderr_fd;
 
 int test_count;
 int err_count;
+
+void start_test_outstream(void);
+void end_test_outstream(void);
 
 void start_test_env(int argc, char **argv) {
     if (argc > 1) {
@@ -75,11 +79,12 @@ int end_test_env(void) {
     if (err_count != 0) {
         fprintf(stdout, ERROR_TEXT_B("Tests failed "));
         if (test_count - err_count > test_count / 5) {
-            fprintf(stdout, WARNING_TEXT_B("(%d/%d)" "\n"), err_count, test_count);
+            fprintf(stdout, WARNING_TEXT_B("(%d/%d)" "\n"), test_count - err_count, test_count);
         } else {
             fprintf(stdout, ERROR_TEXT_B("(%d/%d)" "\n"), test_count - err_count, test_count);
         }
         fflush(stdout);
+        return 1;
     } else {
         fprintf(stdout,
             SUCCESS_TEXT_B("Tests passed (%d/%d)") "\n",
@@ -87,18 +92,17 @@ int end_test_env(void) {
             test_count
         );
         fflush(stdout);
+        return 0;
     }
-
-    return 0;
 }
 
-void start_test_outstream() {
+void start_test_outstream(void) {
     depth += 1;
     dup2(stdout_fd, STDOUT_FILENO);
     dup2(stderr_fd, STDERR_FILENO);
 }
 
-void end_test_outstream() {
+void end_test_outstream(void) {
     dup2(pipefd[1], STDOUT_FILENO);
     dup2(err_pipefd[1], STDERR_FILENO);
     depth -= 1;
@@ -136,7 +140,6 @@ void run_test(int ret_code, char* name) {
         end_test_outstream();
         return;
     }
-
     char *lineptr = NULL;
     size_t lineptr_size = 0;
     while (getline(&lineptr, &lineptr_size, err_stream) != EOF) {
@@ -148,15 +151,14 @@ void run_test(int ret_code, char* name) {
     }
     fflush(stderr);
 
-    // Only print debug if the test failed
+    FILE *stream = fdopen(pipefd[0], "r");
+    if (!stream) {
+        perror("ERROR: fdopen out failed");
+        end_test_outstream();
+        return;
+    }
     if (ret_code != 0) {
-        FILE *stream = fdopen(pipefd[0], "r");
-        if (!stream) {
-            perror("ERROR: fdopen out failed");
-            end_test_outstream();
-            return;
-        }
-
+        // Only print debug if the test failed
         print_spaces(depth, stdout);
         fprintf(stdout, " " WARNING_TEXT_B("Output:") "\n");
 
@@ -169,8 +171,12 @@ void run_test(int ret_code, char* name) {
             lineptr = NULL;
             lineptr_size = 0;
         }
+        fflush(stdout);
+    } else {
+        static char discard_buf[4096];
+        size_t n;
+        while ((n = fread(discard_buf, sizeof(discard_buf), 1, stream)) > 0);
     }
-    fflush(stdout);
 
     end_test_outstream();
 }
