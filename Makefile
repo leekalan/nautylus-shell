@@ -138,11 +138,11 @@ run: $(EXEC)
 
 .PHONY: tests-gcc
 test-gcc: $(TEST_EXEC)
-	@echo "\033[1mRunning all tests...\033[0m"
+	@echo "\033[34;1m[GCC] Running all tests...\033[0m"
 	@fail=0; \
 	for test in $(TEST_EXEC); do \
- 		echo ""; \
 		$$test || fail=1; \
+ 		echo ""; \
 	done; \
 	exit $$fail
 
@@ -152,13 +152,22 @@ run-clang: $(CLANG_EXEC)
 
 .PHONY: tests
 test: $(CLANG_TEST_EXEC)
-	@echo "\033[1mRunning all tests...\033[0m"
+	@echo "\033[34;1m[CLANG] Running all tests...\033[0m"
 	@fail=0; \
 	for test in $(CLANG_TEST_EXEC); do \
- 		echo ""; \
 		$$test || fail=1; \
+  		echo ""; \
 	done; \
 	exit $$fail
+
+.PHONY: check
+check: $(EXEC) $(TEST_EXEC) $(CLANG_EXEC) $(CLANG_TEST_EXEC)
+	@make test
+	@make test-gcc
+
+.PHONY: format
+format:
+	clang-format -i $(SRC) $(TEST_SRC) $(TEST_UTIL)
 
 .PHONY: all
 all: $(EXEC) $(TEST_EXEC) $(CLANG_EXEC) $(CLANG_TEST_EXEC)

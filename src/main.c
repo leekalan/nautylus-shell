@@ -5,9 +5,7 @@
 #include "input.h"
 #include "parse.h"
 
-void write_prompt(int fd) {
-    write(fd, "> ", 2);
-}
+void write_prompt(int fd) { write(fd, "> ", 2); }
 
 int main(void) {
     InputBuffer buf = input_buffer_new();

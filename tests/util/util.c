@@ -1,9 +1,8 @@
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
 #include <fcntl.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #define ERROR_TEXT(x) "\033[31m" x "\033[0m"
 #define WARNING_TEXT(x) "\033[33m" x "\033[0m"
@@ -13,6 +12,8 @@
 #define ERROR_TEXT_B(x) "\033[1;31m" x "\033[0m"
 #define WARNING_TEXT_B(x) "\033[1;33m" x "\033[0m"
 #define SUCCESS_TEXT_B(x) "\033[1;32m" x "\033[0m"
+
+#define PURPLE_B(x) "\033[1;35m" x "\033[0m"
 
 int env_flag = 0;
 
@@ -41,7 +42,7 @@ void start_test_env(int argc, char **argv) {
         return;
     }
 
-    fprintf(stdout, TEXT_B("Running tests for \"%s\":") "\n", argv[0]);
+    fprintf(stdout, PURPLE_B("Running tests for \"%s\":") "\n", argv[0]);
 
     env_flag = 1;
 
@@ -79,18 +80,21 @@ int end_test_env(void) {
     if (err_count != 0) {
         fprintf(stdout, ERROR_TEXT_B("Tests failed "));
         if (test_count - err_count > test_count / 5) {
-            fprintf(stdout, WARNING_TEXT_B("(%d/%d)" "\n"), test_count - err_count, test_count);
+            fprintf(stdout,
+                    WARNING_TEXT_B("(%d/%d)"
+                                   "\n"),
+                    test_count - err_count, test_count);
         } else {
-            fprintf(stdout, ERROR_TEXT_B("(%d/%d)" "\n"), test_count - err_count, test_count);
+            fprintf(stdout,
+                    ERROR_TEXT_B("(%d/%d)"
+                                 "\n"),
+                    test_count - err_count, test_count);
         }
         fflush(stdout);
         return 1;
     } else {
-        fprintf(stdout,
-            SUCCESS_TEXT_B("Tests passed (%d/%d)") "\n",
-            test_count,
-            test_count
-        );
+        fprintf(stdout, SUCCESS_TEXT_B("Tests passed (%d/%d)") "\n", test_count,
+                test_count);
         fflush(stdout);
         return 0;
     }
@@ -114,7 +118,7 @@ void print_spaces(int n, FILE *stream) {
     }
 }
 
-void run_test(int ret_code, char* name) {
+void run_test(int ret_code, char *name) {
     test_count += 1;
     if (ret_code != 0) {
         err_count += 1;
@@ -175,7 +179,8 @@ void run_test(int ret_code, char* name) {
     } else {
         static char discard_buf[4096];
         size_t n;
-        while ((n = fread(discard_buf, sizeof(discard_buf), 1, stream)) > 0);
+        while ((n = fread(discard_buf, sizeof(discard_buf), 1, stream)) > 0)
+            ;
     }
 
     end_test_outstream();

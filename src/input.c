@@ -12,7 +12,7 @@ void enable_raw_mode(void) {
     struct termios raw;
     tcgetattr(STDIN_FILENO, &orig_termios);
     raw = orig_termios;
-    
+
     // disable canonical mode and echo
     raw.c_lflag &= ~(ICANON | ECHO);
     // min 1 char
@@ -34,13 +34,9 @@ InputBuffer input_buffer_new(void) {
     return buf;
 }
 
-void input_buffer_free(InputBuffer buf) {
-    free(buf.data);
-}
+void input_buffer_free(InputBuffer buf) { free(buf.data); }
 
-void reset_input_buffer(InputBuffer *buf) {
-    buf->len = 0;
-}
+void reset_input_buffer(InputBuffer *buf) { buf->len = 0; }
 
 int update_input_buffer(InputBuffer *buf) {
     char c;
@@ -63,10 +59,14 @@ int update_input_buffer(InputBuffer *buf) {
         if (read(STDIN_FILENO, &seq[1], 1) != 1) return -1;
 
         switch (seq[1]) {
-            case 'A': /* up */    return 0;
-            case 'B': /* down */  return 0;
-            case 'C': /* right */ return 0;
-            case 'D': /* left */  return 0;
+        case 'A': /* up */
+            return 0;
+        case 'B': /* down */
+            return 0;
+        case 'C': /* right */
+            return 0;
+        case 'D': /* left */
+            return 0;
         }
 
         return 0; // Unrecognized escape sequence

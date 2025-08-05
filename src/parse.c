@@ -16,9 +16,7 @@ void token_list_free(TokenList list) {
     free(list.tokens);
 }
 
-int is_operator(char c) {
-    return strchr(";()*", c) != NULL;
-}
+int is_operator(char c) { return strchr(";()*", c) != NULL; }
 
 const char *match_operator(char *input) {
     for (size_t i = 0; i < OPERATOR_COUNT; i++) {
@@ -48,7 +46,7 @@ char *parse_token(char **input) {
         *input = NULL;
         return NULL;
     }
-    
+
     if (is_operator(*cleared)) {
         const char *const_op = match_operator(cleared);
         char *op = malloc(strlen(const_op) + 1);
