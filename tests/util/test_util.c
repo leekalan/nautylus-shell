@@ -19,17 +19,15 @@ int env_flag = 0;
 
 int depth;
 
-int pipefd[2];
+int log_pipefd[2];
 int err_pipefd[2];
 
-int stdout_fd;
-int stderr_fd;
+int stdoutfd;
+
+FILE *err;
 
 int test_count;
 int err_count;
-
-void start_test_outstream(void);
-void end_test_outstream(void);
 
 void start_test_env(int argc, char **argv) {
     if (argc > 1) {
@@ -50,30 +48,32 @@ void start_test_env(int argc, char **argv) {
     test_count = 0;
     err_count = 0;
 
-    pipe(pipefd);
+    pipe(log_pipefd);
     pipe(err_pipefd);
 
     int flags;
-    flags = fcntl(pipefd[0], F_GETFL, 0);
-    fcntl(pipefd[0], F_SETFL, flags | O_NONBLOCK);
+    flags = fcntl(log_pipefd[0], F_GETFL, 0);
+    fcntl(log_pipefd[0], F_SETFL, flags | O_NONBLOCK);
     flags = fcntl(err_pipefd[0], F_GETFL, 0);
     fcntl(err_pipefd[0], F_SETFL, flags | O_NONBLOCK);
 
-    stdout_fd = dup(STDOUT_FILENO);
-    stderr_fd = dup(STDERR_FILENO);
+    stdoutfd = dup(STDOUT_FILENO);
+    dup2(log_pipefd[1], STDOUT_FILENO);
 
-    dup2(pipefd[1], STDOUT_FILENO);
-    dup2(err_pipefd[1], STDERR_FILENO);
+    err = fdopen(err_pipefd[1], "w");
 }
 
 int end_test_env(void) {
+    if (env_flag == 0) {
+        fprintf(stderr, "ERROR: test environment not started\n");
+    }
     env_flag = 0;
 
-    dup2(stdout_fd, STDOUT_FILENO);
-    dup2(stderr_fd, STDERR_FILENO);
+    dup2(stdoutfd, STDOUT_FILENO);
+    fclose(err);
 
-    close(pipefd[0]);
-    close(pipefd[1]);
+    close(log_pipefd[0]);
+    close(log_pipefd[1]);
     close(err_pipefd[0]);
     close(err_pipefd[1]);
 
@@ -100,18 +100,6 @@ int end_test_env(void) {
     }
 }
 
-void start_test_outstream(void) {
-    depth += 1;
-    dup2(stdout_fd, STDOUT_FILENO);
-    dup2(stderr_fd, STDERR_FILENO);
-}
-
-void end_test_outstream(void) {
-    dup2(pipefd[1], STDOUT_FILENO);
-    dup2(err_pipefd[1], STDERR_FILENO);
-    depth -= 1;
-}
-
 void print_spaces(int n, FILE *stream) {
     for (int i = 0; i < n; i++) {
         fputc(' ', stream);
@@ -119,12 +107,20 @@ void print_spaces(int n, FILE *stream) {
 }
 
 void run_test(int ret_code, char *name) {
+    if (env_flag == 0) {
+        fprintf(stderr, "ERROR: test environment not started\n");
+        return;
+    }
+
     test_count += 1;
     if (ret_code != 0) {
         err_count += 1;
     }
 
-    start_test_outstream();
+    depth += 1;
+
+    fflush(stdout);
+    dup2(stdoutfd, STDOUT_FILENO);
 
     print_spaces(depth, stdout);
     printf(TEXT_B("Running test \"%s\":") "\n", name);
@@ -136,31 +132,30 @@ void run_test(int ret_code, char *name) {
     } else {
         fprintf(stdout, SUCCESS_TEXT_B(" Test passed!") "\n");
     }
-    fflush(stdout);
 
-    FILE *err_stream = fdopen(err_pipefd[0], "r");
-    if (!err_stream) {
-        perror("ERROR: fdopen err failed");
-        end_test_outstream();
-        return;
+    fflush(err);
+    FILE *read_err = fdopen(err_pipefd[0], "r");
+    if (read_err == NULL) {
+        fprintf(stderr, "ERROR: failed to open stderr pipe\n");
+        exit(1);
     }
+
     char *lineptr = NULL;
     size_t lineptr_size = 0;
-    while (getline(&lineptr, &lineptr_size, err_stream) != EOF) {
-        print_spaces(depth, stderr);
-        fprintf(stderr, "  " ERROR_TEXT("%s"), lineptr);
+    while (getline(&lineptr, &lineptr_size, read_err) != EOF) {
+        print_spaces(depth, stdout);
+        fprintf(stdout, "  " ERROR_TEXT("%s"), lineptr);
         free(lineptr);
         lineptr = NULL;
         lineptr_size = 0;
     }
-    fflush(stderr);
 
-    FILE *stream = fdopen(pipefd[0], "r");
-    if (!stream) {
-        perror("ERROR: fdopen out failed");
-        end_test_outstream();
-        return;
+    FILE *read_log = fdopen(log_pipefd[0], "r");
+    if (read_log == NULL) {
+        fprintf(stderr, "ERROR: failed to open stdout pipe\n");
+        exit(1);
     }
+
     if (ret_code != 0) {
         // Only print debug if the test failed
         print_spaces(depth, stdout);
@@ -168,20 +163,22 @@ void run_test(int ret_code, char *name) {
 
         lineptr = NULL;
         lineptr_size = 0;
-        while (getline(&lineptr, &lineptr_size, stream) != EOF) {
+        while (getline(&lineptr, &lineptr_size, read_log) != EOF) {
             print_spaces(depth, stdout);
             fprintf(stdout, "  %s", lineptr);
             free(lineptr);
             lineptr = NULL;
             lineptr_size = 0;
         }
-        fflush(stdout);
     } else {
         static char discard_buf[4096];
         size_t n;
-        while ((n = fread(discard_buf, sizeof(discard_buf), 1, stream)) > 0)
+        while ((n = fread(discard_buf, sizeof(discard_buf), 1, read_log)) > 0)
             ;
     }
 
-    end_test_outstream();
+    fflush(stdout);
+    dup2(log_pipefd[1], STDOUT_FILENO);
+
+    depth -= 1;
 }
