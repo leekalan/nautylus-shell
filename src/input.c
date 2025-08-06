@@ -30,6 +30,7 @@ void disable_raw_mode(void) {
 
 InputBuffer input_buffer_new(void) {
     InputBuffer buf;
+    buf.start = 0;
     buf.len = 0;
     buf.data = malloc(INPUT_BUFFER_SIZE);
     return buf;
@@ -73,7 +74,7 @@ int update_input_buffer(InputBuffer *buf) {
         return 0; // Unrecognized escape sequence
     } else if (c == 127 || c == '\b') {
         // Backspace
-        if (buf->len > 0) {
+        if (buf->len > buf->start) {
             buf->len--;
             write(STDOUT_FILENO, "\b \b", 3);
         }
@@ -88,6 +89,7 @@ int update_input_buffer(InputBuffer *buf) {
             write(STDOUT_FILENO, "• ", strlen("• "));
             fflush(stdout);
             buf->len -= 1;
+            buf->start = buf->len;
             return 0;
         } else {
             buf->data[buf->len] = '\0';
