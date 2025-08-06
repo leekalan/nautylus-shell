@@ -39,12 +39,71 @@ char *clear_whitespace(const char *input) {
     return (char *)input;
 }
 
+char *parse_double_quotes(char **input) {
+    printf("Input: %s\n", *input);
+    *input += 1;
+
+    char *token = malloc(strlen(*input) + 1);
+    size_t index = 0;
+    while (**input != '"' && **input != '\0') {
+        if (**input == '\\') {
+            *input += 1;
+            if (**input == '\0') {
+                break;
+            }
+        }
+
+        token[index] = **input;
+        *input += 1;
+        index += 1;
+    }
+
+    if (**input == '"') {
+        *input += 1;
+    }
+
+    token[index] = '\0';
+    token = realloc(token, index + 1);
+    printf("Token: %s\n", token);
+    return token;
+}
+
+char *parse_single_quotes(char **input) {
+    *input += 1;
+
+    char *token = malloc(strlen(*input) + 1);
+    size_t index = 0;
+    while (**input != '\'' && **input != '\0') {
+        token[index] = **input;
+        *input += 1;
+        index += 1;
+    }
+    if (**input == '\'') {
+        *input += 1;
+    }
+    token[index] = '\0';
+    token = realloc(token, index + 1);
+    return token;
+}
+
 char *parse_token(char **input) {
     char *cleared = clear_whitespace(*input);
 
     if (!cleared || *cleared == '\0') {
         *input = NULL;
         return NULL;
+    }
+
+    if (*cleared == '"') {
+        char *token = parse_double_quotes(&cleared);
+        *input = cleared;
+        return token;
+    }
+
+    if (*cleared == '\'') {
+        char *token = parse_single_quotes(&cleared);
+        *input = cleared;
+        return token;
     }
 
     if (is_operator(*cleared)) {
