@@ -40,7 +40,6 @@ char *clear_whitespace(const char *input) {
 }
 
 char *parse_double_quotes(char **input) {
-    printf("Input: %s\n", *input);
     *input += 1;
 
     char *token = malloc(strlen(*input) + 1);
@@ -64,7 +63,6 @@ char *parse_double_quotes(char **input) {
 
     token[index] = '\0';
     token = realloc(token, index + 1);
-    printf("Token: %s\n", token);
     return token;
 }
 

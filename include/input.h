@@ -6,6 +6,7 @@
 
 typedef struct {
     char *data;
+    size_t start;
     size_t len;
 } InputBuffer;
 
