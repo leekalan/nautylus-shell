@@ -1,55 +1,181 @@
+# Directories
+BUILD := build
+CLANG_BUILD := build/clang
+TEST_BUILD := build/tests
+CLANG_TEST_BUILD := build/clang/tests
+
+# Test include flags
+TEST_INCLUDE := -Itests/util
+
+# GCC flags
 CC := gcc
 CFLAGS := -Wall -Wextra -O2 -Iinclude
+CFLAGS_TEST := $(CFLAGS) $(TEST_INCLUDE)
+
+# Clang flags
+CLANG_CC := clang
+
+UNAME_S := $(shell uname -s)
+
+CLANG_PLATFORM_FLAGS :=
+ifeq ($(UNAME_S),Linux)
+  CLANG_PLATFORM_FLAGS += -D_FORTIFY_SOURCE=2
+endif
+
+CLANG_FLAGS := -Wall -Wextra -O1 -g -Iinclude \
+  -fsanitize=undefined,address -fno-omit-frame-pointer -fno-common \
+  -fno-sanitize-recover=all -Wpedantic -Wshadow $(CLANG_PLATFORM_FLAGS)
+CLANG_FLAGS_TEST := $(CLANG_FLAGS) $(TEST_INCLUDE)
+
+# Default target
+default: $(EXEC)
+
+### SHARED ###
 
 # All sources including main.c
-SRC := $(wildcard src/*.c)
-OBJ := $(patsubst src/%.c, build/%.o, $(SRC))
-DEP := $(OBJ:.o=.d)
-EXEC := build/app
+SRC := $(shell find src -name '*.c')
 
-# Library sources exclude main.c for tests
+# Library sources and objects exclude main.c for tests
 LIB_SRC := $(filter-out src/main.c, $(SRC))
-LIB_OBJ := $(patsubst src/%.c, build/%.o, $(LIB_SRC))
 
-# Test sources and objects
-TEST_SRC := $(wildcard tests/*.c)
-TEST_EXEC := $(patsubst tests/%.c, build/tests/%, $(TEST_SRC))
+# Test utility
+TEST_UTIL := $(wildcard tests/util/*.c)
 
-# Linking executable
-$(EXEC): $(OBJ)
-	@echo "Linking executable..."
-	$(CC) $(CFLAGS) -o $@ $^
+# Test sources and executables
+TEST_SRC := $(filter-out $(TEST_UTIL), $(shell find tests -name '*.c'))
+
+### GCC ###
+
+# Build
+OBJ := $(patsubst src/%.c, $(BUILD)/%.o, $(SRC))
+DEP := $(OBJ:.o=.d)
+EXEC := $(BUILD)/app
+
+# Library objects exclude main.c for tests
+LIB_OBJ := $(patsubst src/%.c, $(BUILD)/%.o, $(LIB_SRC))
+
+# Test utility objects
+TEST_UTIL_OBJ := $(patsubst tests/%.c, $(TEST_BUILD)/%.o, $(TEST_UTIL))
+
+# Test executables
+TEST_EXEC := $(patsubst tests/%.c, $(TEST_BUILD)/%, $(TEST_SRC))
+
+### CLANG ###
+
+# Build
+CLANG_OBJ := $(patsubst src/%.c, $(CLANG_BUILD)/%.o, $(SRC))
+CLANG_DEP := $(CLANG_OBJ:.o=.d)
+CLANG_EXEC := $(CLANG_BUILD)/app
+
+# Library objects exclude main.c for tests
+CLANG_LIB_OBJ := $(patsubst src/%.c, $(CLANG_BUILD)/%.o, $(LIB_SRC))
+
+# Test utility objects
+CLANG_TEST_UTIL_OBJ := $(patsubst tests/util/%.c, $(CLANG_TEST_BUILD)/util/%.o, $(TEST_UTIL))
+
+# Test executables
+CLANG_TEST_EXEC := $(patsubst tests/%.c, $(CLANG_TEST_BUILD)/%, $(TEST_SRC))
+
+### DEPENDENCIES ###
+
+-include $(DEP) $(TEST_UTIL_OBJ:.o=.d) $(CLANG_DEP) $(CLANG_TEST_UTIL_OBJ:.o=.d)
+
+### GCC BUILD ###
 
 # Compile source files
-build/%.o: src/%.c
-	@echo "Creating objects $<..."
+$(BUILD)/%.o: src/%.c
+	@echo "Creating object $<..."
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -MMD -c $< -o $@
 
-# Compile individual tests
-build/tests/%: tests/%.c
-	@echo "Compiling and linking test $<..."
-	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) $< $(if $(LIB_OBJ),$(LIB_OBJ)) -o $@
+# Build
+$(EXEC): $(OBJ)
+	@echo "Building..."
+	$(CC) $(CFLAGS) -o $@ $^
 
--include $(DEP)
+# Compile test utilities
+$(TEST_UTIL_OBJ): $(TEST_UTIL)
+	@echo "[TEST] Compiling object $<..."
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -MMD -c $< -o $@
+
+# Build tests
+$(TEST_BUILD)/%: tests/%.c $(LIB_OBJ) $(TEST_UTIL_OBJ)
+	@echo "[TEST] Building $<..."
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS_TEST) $< $(LIB_OBJ) $(TEST_UTIL_OBJ) -o $@
+
+### CLANG BUILD ###
+
+# Compile source files
+$(CLANG_BUILD)/%.o: src/%.c
+	@echo "[CLANG] Creating object $<..."
+	@mkdir -p $(dir $@)
+	$(CLANG_CC) $(CLANG_FLAGS) -MMD -c $< -o $@
+
+# Build
+$(CLANG_EXEC): $(CLANG_OBJ)
+	@echo "[CLANG] Building..."
+	$(CLANG_CC) $(CLANG_FLAGS) -o $@ $^
+
+# Compile test utilities
+$(CLANG_TEST_UTIL_OBJ): $(TEST_UTIL)
+	@echo "[CLANG/TEST] Compiling object $<..."
+	@mkdir -p $(dir $@)
+	$(CLANG_CC) $(CLANG_FLAGS) -MMD -c $< -o $@
+
+# Build tests
+$(CLANG_TEST_BUILD)/%: tests/%.c $(CLANG_LIB_OBJ) $(CLANG_TEST_UTIL_OBJ)
+	@echo "[CLANG/TEST] Building $<..."
+	@mkdir -p $(dir $@)
+	$(CLANG_CC) $(CLANG_FLAGS_TEST) $< $(CLANG_LIB_OBJ) $(CLANG_TEST_UTIL_OBJ) -o $@
+
+### COMMANDS ###
 
 .PHONY: clean
 clean:
-	rm -rf build/
+	@rm -rf build/
 
 # Build and run executable
 .PHONY: run
 run: $(EXEC)
-	./scripts/run.sh
+	@./$(EXEC)
+
+.PHONY: tests-gcc
+test-gcc: $(TEST_EXEC)
+	@echo "\033[34;1m---- [GCC] Running all tests -----\033[0m"
+	@fail=0; \
+	for test in $(TEST_EXEC); do \
+		$$test || fail=+1; \
+ 		echo ""; \
+	done; \
+	exit $$fail
+	@echo "\033[34;1mFinished all tests\033[0m"
+
+.PHONY: run-clang
+run-clang: $(CLANG_EXEC)
+	@./$(CLANG_EXEC)
 
 .PHONY: tests
-tests: $(TEST_EXEC)
+test: $(CLANG_TEST_EXEC)
+	@echo "\033[34;1m---- [CLANG] Running all tests ---\033[0m"
+	@fail=0; \
+	for test in $(CLANG_TEST_EXEC); do \
+		$$test || fail=1; \
+  		echo ""; \
+	done; \
+	exit $$fail
+	@echo "\033[34;1mFinished all tests\033[0m"
 
-.PHONY: run-tests
-run-tests: $(TEST_EXEC)
-	@echo "Running all tests..."
-	@for test in $(TEST_EXEC); do \
-		echo "Running $$test"; \
-		$$test || exit 1; \
-	done
+.PHONY: check
+check: $(EXEC) $(TEST_EXEC) $(CLANG_EXEC) $(CLANG_TEST_EXEC)
+	@make test
+	@echo ""
+	@make test-gcc
+
+.PHONY: format
+format:
+	@clang-format -i $(SRC) $(TEST_SRC) $(TEST_UTIL)
+
+.PHONY: all
+all: $(EXEC) $(TEST_EXEC) $(CLANG_EXEC) $(CLANG_TEST_EXEC)

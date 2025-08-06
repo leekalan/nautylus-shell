@@ -3,17 +3,29 @@
 #include <unistd.h>
 
 #include "input.h"
+#include "parse.h"
+
+void write_prompt(int fd) { write(fd, "> ", 2); }
 
 int main(void) {
     InputBuffer buf = input_buffer_new();
     enable_raw_mode();
 
-    write(STDOUT_FILENO, "> ", 2);
+    write_prompt(STDOUT_FILENO);
     while (1) {
         if (update_input_buffer(&buf) == INPUT_BUFFER_READY) {
-            printf("Input received: %s\n", buf.data);
             reset_input_buffer(&buf);
-            write(STDOUT_FILENO, "> ", 2);
+
+            TokenList tokens = token_list_parse(buf.data);
+
+            // Executor is not implemented yet
+            for (size_t i = 0; i < tokens.count; i++) {
+                printf("Token[%ld]: %s\n", i, tokens.tokens[i]);
+            }
+
+            token_list_free(tokens);
+
+            write_prompt(STDOUT_FILENO);
         }
     }
 

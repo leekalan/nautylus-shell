@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <termios.h>
 #include <unistd.h>
 
@@ -12,7 +13,7 @@ void enable_raw_mode(void) {
     struct termios raw;
     tcgetattr(STDIN_FILENO, &orig_termios);
     raw = orig_termios;
-    
+
     // disable canonical mode and echo
     raw.c_lflag &= ~(ICANON | ECHO);
     // min 1 char
@@ -34,13 +35,9 @@ InputBuffer input_buffer_new(void) {
     return buf;
 }
 
-void input_buffer_free(InputBuffer buf) {
-    free(buf.data);
-}
+void input_buffer_free(InputBuffer buf) { free(buf.data); }
 
-void reset_input_buffer(InputBuffer *buf) {
-    buf->len = 0;
-}
+void reset_input_buffer(InputBuffer *buf) { buf->len = 0; }
 
 int update_input_buffer(InputBuffer *buf) {
     char c;
@@ -63,10 +60,14 @@ int update_input_buffer(InputBuffer *buf) {
         if (read(STDIN_FILENO, &seq[1], 1) != 1) return -1;
 
         switch (seq[1]) {
-            case 'A': /* up */    return 0;
-            case 'B': /* down */  return 0;
-            case 'C': /* right */ return 0;
-            case 'D': /* left */  return 0;
+        case 'A': /* up */
+            return 0;
+        case 'B': /* down */
+            return 0;
+        case 'C': /* right */
+            return 0;
+        case 'D': /* left */
+            return 0;
         }
 
         return 0; // Unrecognized escape sequence
@@ -79,10 +80,19 @@ int update_input_buffer(InputBuffer *buf) {
 
         return 0;
     } else if (c == '\n' || c == '\r') {
-        // Enter
+        // New line
         write(STDOUT_FILENO, "\n", 1);
-        buf->data[buf->len] = '\0';
-        return INPUT_BUFFER_READY;
+
+        if (buf->len >= 2 && buf->data[buf->len - 1] == '\\') {
+            // Escaped new line
+            write(STDOUT_FILENO, "• ", strlen("• "));
+            fflush(stdout);
+            buf->len -= 1;
+            return 0;
+        } else {
+            buf->data[buf->len] = '\0';
+            return INPUT_BUFFER_READY;
+        }
     }
 
     if (buf->len == INPUT_BUFFER_SIZE - 1) {
