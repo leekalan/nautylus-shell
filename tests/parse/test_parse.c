@@ -39,9 +39,8 @@ int main(int argc, char **argv) {
         check_tokens("cd folder; ls", 4, (char *[]){"cd", "folder", ";", "ls"}),
         "command with semicolon");
 
-    run_test(check_tokens(";cd folder;hello;;world;", 9,
-                          (char *[]){";", "cd", "folder", ";", "hello", ";",
-                                     ";", "world", ";"}),
+    run_test(check_tokens(";cd hello;;ls;", 7,
+                          (char *[]){";", "cd", "hello", ";", ";", "ls", ";"}),
              "sequential semicolons");
 
     run_test(check_tokens(" \tcd folder\n ", 2, (char *[]){"cd", "folder"}),
@@ -52,6 +51,24 @@ int main(int argc, char **argv) {
 
     run_test(check_tokens("ls ab\\ \\ c", 2, (char *[]){"ls", "ab  c"}),
              "escape spaces");
+
+    run_test(check_tokens("ls \"a b c \"", 2, (char *[]){"ls", "a b c "}),
+             "double quotes");
+
+    run_test(check_tokens("ls \"a\\\"\"", 2, (char *[]){"ls", "a\""}),
+             "double quotes support escaping");
+
+    run_test(check_tokens("ls \"abc", 2, (char *[]){"ls", "abc"}),
+             "unfinished double quotes");
+
+    run_test(check_tokens("ls \'a b c \'", 2, (char *[]){"ls", "a b c "}),
+             "single quotes");
+
+    run_test(check_tokens("ls \'a\\b\'", 2, (char *[]){"ls", "a\\b"}),
+             "single quotes don't support escaping");
+
+    run_test(check_tokens("ls \'abc", 2, (char *[]){"ls", "abc"}),
+             "unfinished single quotes");
 
     return end_test_env();
 }
