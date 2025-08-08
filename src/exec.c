@@ -39,42 +39,55 @@ int run_command_blocking(char *filename, int argc, char *argv[]) {
 }
 
 void process_tokens(int argc, char *argv[]) {
-    if (argc < 1) {
-        return;
-    }
+    int curr_arg = 0;
 
-    // TODO: Handle semicolons
-
-    if (strcmp(argv[0], "cd") == 0) {
-        if (argc == 2) {
-            change_dir(argv[1]);
-        } else {
-            fprintf(stderr, "cd: missing argument\n");
+    while (curr_arg < argc) {
+        int end = curr_arg;
+        while (end < argc && strcmp(argv[end], ";") != 0) {
+            end += 1;
         }
-        return;
-    }
 
-    char *full_path = NULL;
+        if (end == curr_arg) {
+            curr_arg += 1;
+            continue;
+        }
 
-    if (strchr(argv[0], '/')) {
-        full_path = realpath(argv[0], NULL);
-    } else {
-        char *path = strdup(getenv("PATH"));
-        char *p = strtok(path, ":");
-        while (p) {
-            char try_path[512];
-            snprintf(try_path, sizeof(try_path), "%s/%s", p, argv[0]);
-            if (access(try_path, X_OK) == 0) {
-                full_path = realpath(try_path, NULL);
-                break;
+        if (strcmp(argv[curr_arg], "cd") == 0) {
+            if (end - curr_arg > 2) {
+                fprintf(stderr, "cd: too many arguments\n");
+            } else if (end - curr_arg == 2) {
+                change_dir(argv[curr_arg + 1]);
+            } else {
+                fprintf(stderr, "cd: missing argument\n");
             }
-            p = strtok(NULL, ":");
+            curr_arg = end + 1;
+            continue;
         }
-    }
 
-    if (full_path) {
-        run_command_blocking(full_path, argc, argv);
-    } else {
-        fprintf(stderr, "Unkown command: %s\n", argv[0]);
+        char *full_path = NULL;
+
+        if (strchr(argv[curr_arg], '/')) {
+            full_path = realpath(argv[curr_arg], NULL);
+        } else {
+            char *path = strdup(getenv("PATH"));
+            char *p = strtok(path, ":");
+            while (p) {
+                char try_path[512];
+                snprintf(try_path, sizeof(try_path), "%s/%s", p, argv[curr_arg]);
+                if (access(try_path, X_OK) == 0) {
+                    full_path = realpath(try_path, NULL);
+                    break;
+                }
+                p = strtok(NULL, ":");
+            }
+        }
+
+        if (full_path) {
+            run_command_blocking(full_path, end - curr_arg, &argv[curr_arg]);
+        } else {
+            fprintf(stderr, "Unkown command: %s\n", argv[curr_arg]);
+        }
+
+        curr_arg = end + 1;
     }
 }
